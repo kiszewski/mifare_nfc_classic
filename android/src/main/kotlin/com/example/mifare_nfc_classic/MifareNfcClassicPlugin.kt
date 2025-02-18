@@ -12,7 +12,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry.Registrar
+import io.flutter.plugin.common.PluginRegistry;
 import java.io.IOException
 
 
@@ -27,35 +27,15 @@ class MifareNfcClassicPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     companion object {
         private const val CHANNEL_NAME = "mifare_nfc_classic'"
-
-        @JvmStatic
-        fun registerWith(registrar: Registrar) {
-            val instance = MifareNfcClassicPlugin()
-            val channel = MethodChannel(registrar.messenger(), CHANNEL_NAME)
-            instance.channel = channel
-            instance.mNfcAdapter = NfcAdapter.getDefaultAdapter(registrar.context())
-            instance.activity = registrar.activity()
-            channel.setMethodCallHandler(MifareNfcClassicPlugin())
-        }
     }
 
-    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        activity = binding.activity
+    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "mifare_nfc_classic")
+        channel.setMethodCallHandler(this)
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(flutterPluginBinding.applicationContext)
     }
 
-    override fun onDetachedFromActivityForConfigChanges() {
-
-    }
-
-    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        activity = binding.activity
-    }
-
-    override fun onDetachedFromActivity() {
-
-    }
-
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+    override fun onMethodCall(call: MethodCall, result: Result) {
         val password: String? = call.argument<String>("password")
         val blockIndex: Int? = call.argument<Int>("blockIndex")
         val sectorIndex: Int? = call.argument<Int>("sectorIndex")
@@ -90,18 +70,26 @@ class MifareNfcClassicPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.notImplemented()
             }
         }
-
-
     }
 
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "mifare_nfc_classic")
-        channel.setMethodCallHandler(this)
-        mNfcAdapter = NfcAdapter.getDefaultAdapter(flutterPluginBinding.applicationContext)
-    }
-
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+
     }
 
     private fun isNFCEnabled(result: Result) {
